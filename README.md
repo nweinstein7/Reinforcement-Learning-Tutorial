@@ -5,31 +5,33 @@ Sample reinforcement learning notebooks
 
 ![rl](rl1.png)
 
-### 1. DDPG Pendulum
+### 2. DDPG Pendulum
 
 ![rl](rl2.png)
 
-### 1. DDPG Walker
+### 3. DDPG Walker
 
 ![rl](rl3.png)
 
-### 1. DQN Lunar Lander
+### 4. DQN Lunar Lander
 
 ![rl](rl4.png)
 
 
-
 ## To Execute
 
-`pip install numpy`
+```
+pip install numpy
 
-`pip install gym`
+pip install gym
 
-`pip install torch`
+pip install torch
 
-`pip install matplotlib`
+pip install matplotlib
 
-`jupyter notebook`
+jupyter notebook
+
+```
 
 ## Citing
 
