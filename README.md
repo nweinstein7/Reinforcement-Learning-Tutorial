@@ -1,7 +1,21 @@
 # Reinforcement-Learning-Tutorial
 Sample reinforcement learning notebooks
 
-## 1. Cross Entropy
+### 1. Cross Entropy
+
+![rl](rl1.png)
+
+### 1. DDPG Pendulum
+
+![rl](rl2.png)
+
+### 1. DDPG Walker
+
+![rl](rl3.png)
+
+### 1. DQN Lunar Lander
+
+![rl](rl4.png)
 
 
 
