@@ -1,5 +1,6 @@
 # Reinforcement-Learning-Tutorial
-Sample reinforcement learning notebooks
+
+Sample reinforcement learning tutorial notebooks
 
 ### 1. Cross Entropy
 
@@ -20,18 +21,9 @@ Sample reinforcement learning notebooks
 
 ## To Execute
 
-```
-pip install numpy
+`pip install -r requirements.txt`
 
-pip install gym
-
-pip install torch
-
-pip install matplotlib
-
-jupyter notebook
-
-```
+`jupyter notebook`
 
 ## Citing
 
