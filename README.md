@@ -1,13 +1,9 @@
 # Reinforcement-Learning-Tutorial
 Sample reinforcement learning notebooks
 
-## Environment and tools
+## 1. Cross Entropy
 
-1. Jupyter Notebook
-2. Numpy
-3. gym
-4. pytorch
-5. Matplotlib
+
 
 ## To Execute
 
