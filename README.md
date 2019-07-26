@@ -28,6 +28,8 @@ Check out the corresponding medium blog post [Reinforcement Learning Tutorial wi
 
 ### 5. DDQN Space
 
+Check out the corresponding medium blog post [Deep Reinforcement Learning Tutorial with Open AI Gym](https://medium.com/@abhinav.sagar/deep-reinforcement-learning-tutorial-with-open-ai-gym-c0de4471f368).
+
 ![rl](rl6.png)
 
 ![rl](space.png)
