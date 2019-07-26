@@ -28,6 +28,8 @@ Check out the corresponding medium blog post [Reinforcement Learning Tutorial wi
 
 ### 5. DDQN Space
 
+![rl](rl6.png)
+
 ![rl](space.png)
 
 ## To Execute
