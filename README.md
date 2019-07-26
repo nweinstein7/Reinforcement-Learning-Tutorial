@@ -8,6 +8,8 @@ Check out the corresponding medium blog post [Reinforcement Learning Tutorial wi
 
 ![rl](rl1.png)
 
+![rl](ct1.gif)
+
 ### 2. DDPG Pendulum
 
 ![rl](rl2.png)
@@ -18,12 +20,15 @@ Check out the corresponding medium blog post [Reinforcement Learning Tutorial wi
 
 ![rl](rl3.png)
 
+![rl](ct2.gif)
+
 ### 4. DQN Lunar Lander
 
 ![rl](rl4.png)
 
 ### 5. DDQN Space
 
+![rl](space.png)
 
 ## To Execute
 
