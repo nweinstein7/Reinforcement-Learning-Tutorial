@@ -10,7 +10,7 @@ Check out the corresponding medium blog post [https://towardsdatascience.com/rei
 
 ![rl](ct1.gif)
 
-### 3. DDPG Walker
+### 2. DDPG Walker
 
 Check out the corresponding medium blog post [https://towardsdatascience.com/reinforcement-learning-tutorial-with-open-ai-gym-6215a7a15970](https://towardsdatascience.com/reinforcement-learning-tutorial-with-open-ai-gym-6215a7a15970).
 
@@ -18,7 +18,7 @@ Check out the corresponding medium blog post [https://towardsdatascience.com/rei
 
 ![rl](ct2.gif)
 
-### 5. DDQN Space
+### 3. DDQN Space
 
 Check out the corresponding medium blog post [https://towardsdatascience.com/deep-reinforcement-learning-tutorial-with-open-ai-gym-c0de4471f368](https://towardsdatascience.com/deep-reinforcement-learning-tutorial-with-open-ai-gym-c0de4471f368).
 
