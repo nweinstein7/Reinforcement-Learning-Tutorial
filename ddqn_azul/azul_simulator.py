@@ -149,8 +149,14 @@ class AzulSimulator(object):
             self.center.extend(discard_tiles)
         board = self.boards[player]
         if placement < len(board.staging_rows):
+            # place in staging row
             row = board.staging_rows[placement]
-            if all(t == None or t.color == color for t in row):
+            color_index = TILE_WALL_MAP[placement].index(color)
+            tile_wall_index = 5 * placement + color_index
+            if all(t == None or t.color == color
+                   for t in row) and board.tile_wall[tile_wall_index] == None:
+                # if the staging row is empty or matches the color, you can
+                # add tiles to it. Also, can't add if the tile wall already has that color.
                 for i, cell in enumerate(row):
                     if cell == None:
                         tile = next((_t for _t in tiles if _t.color == color),
@@ -225,11 +231,31 @@ class AzulSimulator(object):
                                     if board.tile_wall[
                                             horizontal_tally_location] != None:
                                         horizontal_tally += 1
-                                        print("Tally: {}".format(
+                                        print("Horizontal tally: {}".format(
                                             horizontal_tally))
                                     else:
                                         break
                                 total_reward += horizontal_tally
+
+                                vertical_tally = 0
+                                vertical_start = tile_wall_location
+                                while vertical_start > i * 5 + index and board.tile_wall[
+                                        vertical_start - 5] != None:
+                                    vertical_start -= 5
+                                print("Vertical start: {}".format(
+                                    vertical_start))
+                                for vertical_tally_location in range(
+                                        vertical_start, 25, 5):
+                                    print("Vertical tally location: {}".format(
+                                        vertical_tally_location))
+                                    if board.tile_wall[
+                                            vertical_tally_location] != None:
+                                        vertical_tally += 1
+                                        print("Vertical tally: {}".format(
+                                            vertical_tally))
+                                    else:
+                                        break
+
                             else:
                                 # add remainder of tiles to box
                                 self.box.append(tile)
@@ -248,8 +274,40 @@ class AzulSimulator(object):
                         self.center.append(t)
                     else:
                         self.box.append(t)
-            # repopulate all the factories
-            self.initialize_factories()
+            if self.game_over():
+                # When game is over, apply the end of game rewards.
+                for board in self.boards:
+                    # Complete rows = +2
+                    for i in range(0, 5):
+                        tiles_in_row = 0
+                        for j in range(0, 5):
+                            if board.tile_wall[i * 5 + j] != None:
+                                tiles_in_row += 1
+                        if tiles_in_row == 5:
+                            print("Adding total reward for horizontal row")
+                            total_reward += 2
+                    # Complete column = +7
+                    for i in range(0, 5):
+                        tiles_in_col = 0
+                        for j in range(0, 5):
+                            if board.tile_wall[i + j * 5] != None:
+                                tiles_in_col += 1
+                        if tiles_in_col == 5:
+                            print("Adding total reward for vertical column")
+                            total_reward += 7
+                    # Complete color = +10
+                    for color_index, color in enumerate(COLORS):
+                        color_count = 0
+                        for tile in board.tile_wall:
+                            if tile and tile.color == color_index:
+                                color_count += 1
+                        if color_count == 5:
+                            print("Adding total reward for color {}".format(
+                                color))
+                            total_reward += 10
+            else:
+                # If game not over, repopulate all the factories.
+                self.initialize_factories()
             print("Reward: {}".format(total_reward))
             return total_reward
         else:
@@ -264,6 +322,7 @@ class AzulSimulator(object):
                     filled_in = (board.tile_wall[5 * i + j] != None
                                  and filled_in)
                 if filled_in:
+                    print("Game over.")
                     return True
         return False
 
