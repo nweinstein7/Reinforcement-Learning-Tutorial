@@ -98,13 +98,14 @@ class DeepQ(object):
                 1, *self.input_shape),
                                             batch_size=1)
             fut_action = self.target_model.predict(s2_batch[i].reshape(
-                1, self.input_shape),
+                1, *self.input_shape),
                                                    batch_size=1)
             targets[i, a_batch[i]] = r_batch[i]
             if d_batch[i] == False:
                 targets[i, a_batch[i]] += DECAY_RATE * np.max(fut_action)
 
-        loss = self.model.train_on_batch(s_batch, targets)
+        loss = self.model.train_on_batch(s_batch.reshape(*s_batch.shape, 1),
+                                         targets)
 
         # Print the loss every 10 iterations.
         if observation_num % 10 == 0:

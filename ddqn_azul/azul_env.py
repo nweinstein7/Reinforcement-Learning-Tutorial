@@ -27,9 +27,9 @@ class AzulEnv(gym.Env):
             shape=(
                 # 1 value per tile
                 N_TILES + 1,
-                # locations of tiles: factory, bag, center;
-                # floor + 25 wall spots + 5 staging rows per player
-                n_factories + 2 + (n_players * 31),
+                # locations of tiles: factory, bag, center, box (n_factories + 3);
+                # floor + 25 wall spots + 5 staging rows per player = 31
+                n_factories + 3 + (n_players * 31),
             ),
             dtype=np.uint8)
 
@@ -41,6 +41,7 @@ class AzulEnv(gym.Env):
             self.selection_options * self.placement_options * len(COLORS))
         self.azs = AZS(n_players, N_TILES)
         self.active_player = 0
+        self.num_players = n_players
 
     def step(self, a):
         reward = 0.0
@@ -60,6 +61,8 @@ class AzulEnv(gym.Env):
                      self.placement_options) % self.selection_options
         reward = self.azs.act(int(selection), int(color), int(placement),
                               self.active_player)
+        # update whose turn it is
+        self.active_player = (self.active_player + 1) % self.num_players
         return self.azs.get_obs(), reward, self.azs.game_over()
 
     def get_obs(self):

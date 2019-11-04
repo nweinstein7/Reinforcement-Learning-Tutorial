@@ -125,7 +125,7 @@ class Azul(object):
             state = self.convert_process_buffer()
             predict_movement = self.deep_q.predict_movement(state, 0)[0]
             self.env.render()
-            observation, reward, done, _ = self.env.step(predict_movement)
+            observation, reward, done = self.env.step(predict_movement)
             tot_award += reward
             self.process_buffer.append(observation)
             self.process_buffer = self.process_buffer[1:]
