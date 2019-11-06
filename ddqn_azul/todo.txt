@@ -1,0 +1,4 @@
+- Make 1st mover tile result in which player goes first next round
+- Subtract one point from rewards (currently double counting horizontal, vertical) [DONE]
+- Add support for process buffer the way space invaders does?
+- Support rewards for individual players, have multiple agents playing?

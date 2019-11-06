@@ -54,6 +54,7 @@ class AzulEnv(gym.Env):
         # 0, 1, 1 -> 6
         # ...
         # 0, 1, 4 -> 9
+        print("Action: {}".format(a))
         color = a % len(COLORS)
         color_placements = ((a - color) / len(COLORS))
         placement = color_placements % self.placement_options

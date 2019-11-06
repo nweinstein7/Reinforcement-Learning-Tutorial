@@ -2,9 +2,12 @@ from enum import Enum
 import random
 import numpy as np
 
-COLORS = ['RED', 'BLUE', 'TURQUOISE', 'YELLOW', 'BLACK']
+COLORS = ['RED', 'BLU', 'TRQ', 'YLL', 'BLK']
 
 FIRST_MOVER_TILE = 5
+
+# in our observation array, empty can't be 0 because 0 is RED
+EMPTY_TILE_POSITION = 6
 
 # map of which colors go where in tile wall
 TILE_WALL_MAP = [[1, 3, 0, 4, 2], [2, 1, 3, 0, 4], [4, 2, 1, 3, 0],
@@ -44,6 +47,7 @@ class Factory(object):
         discard_tiles = []
         if any(t.color == color for t in self.tiles):
             # only perform the operation if the move is valid
+            print("Valid move.")
             for t in self.tiles.copy():
                 # copy the tiles so we can remove as we iterate
                 if t.color == color:
@@ -133,18 +137,26 @@ class AzulSimulator(object):
               format(factory_selection, COLORS[color], tile_row, player + 1))
 
         tiles = []
+        valid_move_bonus = 0
         if selection >= self.num_factories:
             # selected center
             if len([t for t in self.center if t.color == color]) > 0:
-                for t in self.center:
+                print("Valid center move.")
+                valid_move_bonus += 1
+                for t in self.center.copy():
+                    # make sure to copy so we don't shorten the list as we go
                     if t.color == color or t.color == FIRST_MOVER_TILE:
                         tiles.append(t)
                         self.center.remove(t)
+            else:
+                print("Invalid center move.")
         else:
             f = self.factories[selection]
             tiles, discard_tiles = f.fetch(color)
-            print("Fetched: {}".format([t.color for t in tiles]))
-            print("Discarded: {}".format([t.color for t in discard_tiles]))
+            if len(tiles) > 0:
+                print("Fetched: {}".format([t.color for t in tiles]))
+                print("Discarded: {}".format([t.color for t in discard_tiles]))
+                valid_move_bonus += 1
 
             self.center.extend(discard_tiles)
         board = self.boards[player]
@@ -157,6 +169,7 @@ class AzulSimulator(object):
                    for t in row) and board.tile_wall[tile_wall_index] == None:
                 # if the staging row is empty or matches the color, you can
                 # add tiles to it. Also, can't add if the tile wall already has that color.
+                added_to_row = False
                 for i, cell in enumerate(row):
                     if cell == None:
                         tile = next((_t for _t in tiles if _t.color == color),
@@ -165,19 +178,24 @@ class AzulSimulator(object):
                             print("Tile found: {}".format(COLORS[tile.color]))
                             row[i] = tile
                             tiles.remove(tile)
+                            added_to_row = True
                         else:
                             print("No tiles found")
+                if added_to_row:
+                    valid_move_bonus += 1
         board.floor.extend(tiles)
         self.print_board()
-        reward = self.start_new_round()
+        print("Adding valid move bonus of {}".format(valid_move_bonus))
+        reward = self.start_new_round() + valid_move_bonus
         return reward
 
     def get_obs(self):
         """
         Render game into observable state
         """
-        obs = np.zeros(shape=(self.num_tiles + 1, self.num_factories + 3 +
-                              (self.num_players * 31)))
+        obs = np.full(shape=(self.num_tiles + 1,
+                             self.num_factories + 3 + (self.num_players * 31)),
+                      fill_value=EMPTY_TILE_POSITION)
         for i, f in enumerate(self.factories):
             for t in f.tiles:
                 obs[t.number][i] = float(t.color)
@@ -189,6 +207,19 @@ class AzulSimulator(object):
         for box_tile in self.box:
             obs[box_tile.number][self.num_factories + 2] = float(
                 box_tile.color)
+        for b, board in enumerate(self.boards):
+            for t in board.floor:
+                # 0th position of every chunk of 31 is the floor
+                obs[t.number][b * 31] = float(t.color)
+            for x, t in enumerate(board.tile_wall):
+                if t:
+                    # positions 1 - 25 are for the tile wall
+                    obs[t.number][b * 31 + 1 + x] = float(t.color)
+            for y, r in enumerate(board.staging_rows):
+                for t in r:
+                    # positions 26 - 31 are staging rows
+                    if t:
+                        obs[t.number][b * 31 + 25 + y] = float(t.color)
         return obs
 
     def start_new_round(self):
@@ -202,7 +233,8 @@ class AzulSimulator(object):
         if all(len(f.tiles) == 0
                for f in self.factories) and len(self.center) == 0:
             print("New round.")
-            total_reward = 0  # for now, reward for all player success
+            # start each player in each round at +14 so that there are no negative rewards
+            total_reward = self.num_players * 14  # for now, reward for all player success
             for board in self.boards:
                 for i, sr in enumerate(board.staging_rows):
                     if all(t != None for t in sr):
@@ -255,7 +287,13 @@ class AzulSimulator(object):
                                             vertical_tally))
                                     else:
                                         break
-
+                                if vertical_tally == 1:
+                                    # don't double count the piece if there
+                                    # is nothing in vertical direction
+                                    vertical_tally = 0
+                                total_reward += vertical_tally
+                                print("Total reward after row: {}".format(
+                                    total_reward))
                             else:
                                 # add remainder of tiles to box
                                 self.box.append(tile)
@@ -267,6 +305,9 @@ class AzulSimulator(object):
                 for i in range(0, len(board.floor.copy())):
                     if i < len(FLOOR_MAP):
                         # floor values are negative
+                        print(
+                            "Subtracting for board {} amount {} from total {}."
+                            .format(i + 1, FLOOR_MAP[i], total_reward))
                         total_reward += FLOOR_MAP[i]
                     # remove tile from floor and add back to box, or center if 1st mover tile
                     t = board.floor.pop()
@@ -345,3 +386,24 @@ class AzulSimulator(object):
                     j + 1, " ".join([str(t) for t in sr]),
                     " ".join([str(t) for t in tile_wall_row])))
             print("\tFloor:{}".format(" ".join([str(t) for t in board.floor])))
+
+
+if __name__ == '__main__':
+    print('Playing azul!')
+    n_players = int(input("How many players?"))
+    azs = AzulSimulator(n_players)
+    azs.reset_game()
+    player = 0
+    while not azs.game_over():
+        azs.print_board()
+        selection = input(
+            'Player {}, which factory do you choose? '.format(player + 1))
+        color = input(
+            'Which color do you choose? RED: 0, BLU: 1, TRQ: 2, YLL:3, BLK: 4. '
+        )
+        placement = input('Which tile row do you choose? ')
+        reward = azs.act(
+            int(selection) - 1, int(color),
+            int(placement) - 1, player)
+        print("Reward: {}".format(reward))
+        player = (player + 1) % n_players
