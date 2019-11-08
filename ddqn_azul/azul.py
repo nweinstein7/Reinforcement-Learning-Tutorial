@@ -55,7 +55,6 @@ class Azul(object):
 
     def train(self, num_frames):
         observation_num = 0
-        curr_state = self.env.get_obs()
         epsilon = INITIAL_EPSILON
         alive_frame = 0
         total_reward = 0
@@ -72,7 +71,7 @@ class Azul(object):
             #self.process_buffer = []
 
             predict_movement, predict_q_value = self.deep_q.predict_movement(
-                curr_state, epsilon)
+                initial_state, epsilon)
 
             reward, done = 0, False
             _, reward, done = self.env.step(predict_movement)
@@ -85,7 +84,8 @@ class Azul(object):
 
             if observation_num % 10 == 0:
                 print("We predicted a q value of ", predict_q_value)
-
+                print("Curr state: {}".format(initial_state))
+                print("Epsilon: {}".format(epsilon))
             if done:
                 print("Lived with maximum time ", alive_frame)
                 print("Earned a total of reward equal to ", total_reward)
@@ -108,7 +108,7 @@ class Azul(object):
             # Save the network every 100000 iterations
             if observation_num % 10000 == 9999:
                 print("Saving Network")
-                self.deep_q.save_network("saved.h5")
+                self.deep_q.save_network("saved_6.h5")
 
             alive_frame += 1
             observation_num += 1

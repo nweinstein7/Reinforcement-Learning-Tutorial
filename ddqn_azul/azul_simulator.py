@@ -13,9 +13,17 @@ EMPTY_TILE_POSITION = 6
 TILE_WALL_MAP = [[1, 3, 0, 4, 2], [2, 1, 3, 0, 4], [4, 2, 1, 3, 0],
                  [0, 4, 2, 1, 3], [3, 0, 4, 2, 1]]
 
+# there are 25 tiles in the tile wall
+TILE_WALL_SIZE = 25
+
 # map of point loss for each floor position
 FLOOR_MAP = [-1, -1, -2, -2, -2, -3, -3]
 
+def sorted_tile_list(tile_list):
+    """
+    Sort a list of tiles
+    """
+    return sorted(tile_list, key=lambda tile: tile.number)
 
 class Tile(object):
     def __init__(self, number, color):
@@ -29,6 +37,14 @@ class Tile(object):
             return '1st'
         else:
             return ''
+    
+    def __eq__(self, t):
+        """
+        Check equality
+        """
+        assert self.number == t.number
+        assert self.color == t.color
+        return True
 
 
 class Factory(object):
@@ -66,7 +82,7 @@ class PlayerBoard(object):
     """
     def __init__(self):
         self.staging_rows = [[None] * (x + 1) for x in range(0, 5)]
-        self.tile_wall = [None] * 25
+        self.tile_wall = [None] * TILE_WALL_SIZE
         self.floor = []
 
 
@@ -207,19 +223,24 @@ class AzulSimulator(object):
         for box_tile in self.box:
             obs[box_tile.number][self.num_factories + 2] = float(
                 box_tile.color)
+        # board index start is the first slot for indexing
+        # tiles on the board
+        board_index_start = self.num_factories + 3
         for b, board in enumerate(self.boards):
             for t in board.floor:
                 # 0th position of every chunk of 31 is the floor
-                obs[t.number][b * 31] = float(t.color)
+                obs[t.number][b * 31 + board_index_start] = float(t.color)
             for x, t in enumerate(board.tile_wall):
                 if t:
                     # positions 1 - 25 are for the tile wall
-                    obs[t.number][b * 31 + 1 + x] = float(t.color)
+                    obs[t.number][b * 31 + 1 + x + board_index_start] = float(
+                        t.color)
             for y, r in enumerate(board.staging_rows):
                 for t in r:
                     # positions 26 - 31 are staging rows
                     if t:
-                        obs[t.number][b * 31 + 25 + y] = float(t.color)
+                        obs[t.number][b * 31 + TILE_WALL_SIZE + y +
+                                      board_index_start] = float(t.color)
         return obs
 
     def start_new_round(self):
@@ -277,7 +298,7 @@ class AzulSimulator(object):
                                 print("Vertical start: {}".format(
                                     vertical_start))
                                 for vertical_tally_location in range(
-                                        vertical_start, 25, 5):
+                                        vertical_start, TILE_WALL_SIZE, 5):
                                     print("Vertical tally location: {}".format(
                                         vertical_tally_location))
                                     if board.tile_wall[
@@ -367,13 +388,59 @@ class AzulSimulator(object):
                     return True
         return False
 
+    def initialize_from_obs(self, obs):
+        """
+        Given an observation matrix
+        """
+        self.factories = [Factory([]) for _ in range(0, self.num_factories)]
+        self.boards = [PlayerBoard() for _ in range(0, self.num_players)]
+
+        for i in range(0, self.num_tiles + 1):
+            for j in range(0, self.num_factories):
+                color = obs[i][j]
+                if color != EMPTY_TILE_POSITION:
+                    t = Tile(i, color)
+                    self.factories[j].tiles.append(t)
+            bag_color = obs[i][self.num_factories]
+            if bag_color != EMPTY_TILE_POSITION:
+                self.bag.append(Tile(i, bag_color))
+            center_color = obs[i][self.num_factories + 1]
+            if center_color != EMPTY_TILE_POSITION:
+                self.center.append(Tile(i, center_color))
+            box_color = obs[i][self.num_factories + 2]
+            if box_color != EMPTY_TILE_POSITION:
+                self.box.append(Tile(i, box_color))
+
+            # populate player boards
+            board_index_start = self.num_factories + 3
+            for b, board in enumerate(self.boards):
+                # populate floor from observation
+                floor_color = obs[i][b * 31 + board_index_start]
+                if floor_color != EMPTY_TILE_POSITION:
+                    board.floor.append(Tile(i, floor_color))
+
+                # populate tile wall
+                for x in range(0, TILE_WALL_SIZE):
+                    tile_wall_color = obs[i][board_index_start + b * 31 + x +
+                                             1]
+                    if tile_wall_color != EMPTY_TILE_POSITION:
+                        board.tile_wall[x] = Tile(i, tile_wall_color)
+                # populate staging rows
+                for y in range(0, 5):
+                    staging_row_color = obs[i][board_index_start + b * 31 + y +
+                                               TILE_WALL_SIZE]
+                    if staging_row_color != EMPTY_TILE_POSITION:
+                        first_empty_spot = board.staging_rows[y].index(None)
+                        board.staging_rows[y][first_empty_spot] = Tile(
+                            i, staging_row_color)
+
     def print_board(self):
         print("FACTORIES")
         for i, factory in enumerate(self.factories):
-            print("{}: {}".format(i + 1,
-                                  ' '.join([str(t) for t in factory.tiles])))
+            print("{}: {}".format(
+                i + 1, ' '.join(sorted([str(t) for t in factory.tiles]))))
         print("CENTER")
-        print("{}".format(' '.join([str(t) for t in self.center])))
+        print("{}".format(' '.join(sorted([str(t) for t in self.center]))))
 
         print("BOARDS")
         for i, board in enumerate(self.boards):
@@ -386,7 +453,23 @@ class AzulSimulator(object):
                     j + 1, " ".join([str(t) for t in sr]),
                     " ".join([str(t) for t in tile_wall_row])))
             print("\tFloor:{}".format(" ".join([str(t) for t in board.floor])))
-
+        
+    def __eq__(self, azs):
+        """
+        Comparison method
+        """
+        assert len(azs.factories) == len(self.factories)
+        for i, factory in enumerate(self.factories):
+            sorted_azs_tiles = sorted_tile_list(azs.factories[i].tiles)
+            for j, t in enumerate(sorted_tile_list(factory.tiles)):
+                assert t == sorted_azs_tiles[j]
+        sorted_azs_center = sorted_tile_list(azs.center)
+        for k, t in enumerate(sorted_tile_list(self.center)):
+            assert t == sorted_azs_center[k]
+        assert len(azs.bag) == len(self.bag)
+        assert len(azs.box) == len(self.box)
+        assert len(azs.boards) == len(self.boards)
+        return True
 
 if __name__ == '__main__':
     print('Playing azul!')
@@ -407,3 +490,11 @@ if __name__ == '__main__':
             int(placement) - 1, player)
         print("Reward: {}".format(reward))
         player = (player + 1) % n_players
+        print("State:")
+        print(azs.get_obs())
+        print("")
+        print("======= State from obs: =======")
+        demo_state = AzulSimulator(n_players)
+        demo_state.initialize_from_obs(azs.get_obs())
+        demo_state.print_board()
+        print("===============================")
